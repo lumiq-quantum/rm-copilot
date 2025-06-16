@@ -61,7 +61,7 @@ function createBotMessage(responseData: any): Message {
       const parsedData = JSON.parse(responseData.dataframe);
       if (Array.isArray(parsedData) && parsedData.length > 0) {
         content.tableData = parsedData;
-      } else if (parsedData) { // Handle if dataframe is a single object (though array is expected)
+      } else if (parsedData && typeof parsedData === 'object' && Object.keys(parsedData).length > 0) { // Handle if dataframe is a single object
          content.tableData = [parsedData];
       }
     } catch (e) {
@@ -111,7 +111,7 @@ export async function processUserMessage(
         table_meta: "schema/student_club_tables.xlsx",
         column_meta: "schema/student_club_columns.xlsx",
         metric_meta: "schema/student_club_metrics.xlsx",
-        table_access": null
+        "table_access": null
     },
     messages: apiMessages, // History before the current user_query
     session: "new" 
@@ -135,7 +135,6 @@ export async function processUserMessage(
 
     const responseData = await response.json();
     
-    // The API response now has "answer", "sql_query", "dataframe" etc.
     if (responseData && (responseData.answer || responseData.response)) {
       return createBotMessage(responseData);
     } else {
