@@ -1,4 +1,3 @@
-
 // @ts-nocheck
 "use client";
 
@@ -9,7 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useChat } from '@/contexts/ChatContext';
 import { LoadingAnimation } from './LoadingAnimation';
 import { Card, CardContent } from '@/components/ui/card';
-import { Zap, AlertTriangle, MessageSquareText } from 'lucide-react'; // Added Zap
+import { Zap, AlertTriangle, MessageSquareText } from 'lucide-react'; 
 import { Button } from '@/components/ui/button';
 
 
@@ -23,12 +22,11 @@ const WelcomeSuggestions = [
 
 export function ChatWindow() {
   const { activeConversation, isLoadingMessage, addMessageToConversation } = useChat();
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const viewportRef = useRef<HTMLDivElement>(null);
+  const chatViewportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (viewportRef.current) {
-      viewportRef.current.scrollTop = viewportRef.current.scrollHeight;
+    if (chatViewportRef.current) {
+      chatViewportRef.current.scrollTop = chatViewportRef.current.scrollHeight;
     }
   }, [activeConversation?.messages, isLoadingMessage]);
 
@@ -39,8 +37,6 @@ export function ChatWindow() {
   };
 
   if (!activeConversation) {
-    // This case should ideally be handled by redirecting or selecting a default conversation.
-    // If it occurs, show a generic welcome or instructions.
     return (
       <div className="flex flex-col items-center justify-center h-full text-center p-8 bg-background">
         <MessageSquareText className="w-24 h-24 text-muted-foreground mb-6" strokeWidth={1} />
@@ -52,8 +48,7 @@ export function ChatWindow() {
     );
   }
   
-  // Show welcome screen if it's a new conversation with only the initial bot message
-  const isNewConversationWelcome = activeConversation.messages.length === 1 && activeConversation.messages[0].sender === 'bot';
+  const isNewConversationWelcome = activeConversation.messages.length === 1 && activeConversation.messages[0].sender === 'bot' && activeConversation.messages[0].id.startsWith('msg-init-');
 
   if (isNewConversationWelcome) {
     return (
@@ -97,8 +92,8 @@ export function ChatWindow() {
 
   return (
     <div className="flex flex-col h-full bg-background">
-       <ScrollArea className="flex-grow p-4" ref={scrollAreaRef}>
-        <div ref={viewportRef} className="h-full max-w-4xl mx-auto w-full"> {/* Constrain width of messages */}
+       <ScrollArea className="flex-grow p-4" viewportRef={chatViewportRef}>
+        <div className="max-w-4xl mx-auto w-full"> 
           {activeConversation.messages.map((msg) => (
             <ChatMessage key={msg.id} message={msg} />
           ))}
@@ -109,4 +104,3 @@ export function ChatWindow() {
     </div>
   );
 }
-
