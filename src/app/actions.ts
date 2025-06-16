@@ -1,3 +1,4 @@
+
 // @ts-nocheck
 // Disabling TypeScript check for this file due to diverse API interaction needs.
 'use server';
@@ -27,7 +28,8 @@ function formatMessagesForApi(messages: Message[]): Array<{ role: 'user' | 'assi
       }
 
       // Only include messages that have text content
-      if (textContent) {
+      // and are not the initial placeholder bot message
+      if (textContent && !msg.id.startsWith('msg-init-')) {
         return {
           role: apiRole,
           content: [{ text: textContent }],
@@ -54,13 +56,8 @@ export async function processUserMessage(
   userInput: string,
   chatHistory: Message[] // Historical messages before the current userInput
 ): Promise<Message> {
-  const apiUrl = process.env.NEXT_PUBLIC_BOT_API_URL;
-  const apiKey = process.env.NEXT_PUBLIC_BOT_API_KEY;
-
-  if (!apiUrl || !apiKey) {
-    console.error('API URL or Key is not configured in environment variables.');
-    return createBotMessage('BankerAI integration is not configured. Please contact support.');
-  }
+  const apiUrl = 'https://s7fusrae5g.execute-api.us-east-1.amazonaws.com/prod/invoke';
+  const apiKey = '0GC39oZvif6jbX5MHFwSZ6QQ1vy6y1mY5D1kCEgK';
 
   // Format the historical messages for the API
   const apiMessages = formatMessagesForApi(chatHistory);
