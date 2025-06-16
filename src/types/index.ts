@@ -30,5 +30,6 @@ export interface Conversation {
   name: string;
   messages: Message[];
   createdAt: string; // Store as ISO string
+  lastActivity: string; // Store as ISO string, updated on new message
   userId: string; 
 }
