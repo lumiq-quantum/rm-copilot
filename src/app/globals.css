@@ -33,7 +33,7 @@
 
     --ring: 180 100% 35%; /* Ring color related to primary */
 
-    --radius: 0.5rem;
+    --radius: 0.75rem; /* Updated for more modern rounded look */
 
     /* Sidebar specific colors */
     --sidebar-background: 210 10% 15%; /* Dark, near black for strong contrast */
@@ -100,6 +100,6 @@
   }
   body {
     @apply bg-background text-foreground;
-    /* Removed font-family here, will be handled by tailwind.config.ts and layout.tsx */
+    line-height: 1.6; /* Added for more spaced out feel */
   }
 }

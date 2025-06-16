@@ -3,7 +3,7 @@
 import type { Message, AIMessageContent } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Bot, User as UserIcon, BarChart2, Database } from 'lucide-react';
+import { Sparkles, UserCircle2, BarChart2, Database } from 'lucide-react';
 import Image from 'next/image';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -76,16 +76,16 @@ export function ChatMessage({ message }: ChatMessageProps) {
   };
 
   return (
-    <div className={`flex items-end gap-2 my-4 ${isUser ? 'justify-end' : 'justify-start'}`}>
+    <div className={`flex items-end gap-3 my-6 ${isUser ? 'justify-end' : 'justify-start'}`}>
       {!isUser && (
-        <Avatar className="h-8 w-8 self-start shadow-sm">
+        <Avatar className="h-9 w-9 self-start shadow-sm">
           <AvatarFallback className="bg-primary text-primary-foreground">
-            <Bot size={18} />
+            <Sparkles size={20} />
           </AvatarFallback>
         </Avatar>
       )}
       <div
-        className={`max-w-[75%] p-3 rounded-xl shadow-md text-sm
+        className={`max-w-[75%] p-3.5 rounded-xl shadow-md text-sm
           ${isUser 
             ? 'bg-primary text-primary-foreground rounded-br-none' 
             : 'bg-card text-card-foreground rounded-bl-none'
@@ -97,9 +97,9 @@ export function ChatMessage({ message }: ChatMessageProps) {
         </p>
       </div>
       {isUser && (
-         <Avatar className="h-8 w-8 self-start shadow-sm">
+         <Avatar className="h-9 w-9 self-start shadow-sm">
           <AvatarFallback className="bg-accent text-accent-foreground">
-            <UserIcon size={18} />
+            <UserCircle2 size={20} />
           </AvatarFallback>
         </Avatar>
       )}

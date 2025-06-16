@@ -28,14 +28,14 @@ export function ChatInput() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="sticky bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-md border-t">
+    <form onSubmit={handleSubmit} className="sticky bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-md border-t shadow-md">
       <div className="relative flex items-center">
         <Textarea
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Ask about a customer..."
-          className="pr-16 resize-none rounded-full py-3 px-4 shadow-sm focus-visible:ring-accent"
+          className="pr-16 resize-none rounded-xl py-3 px-4 shadow-sm focus-visible:ring-accent"
           rows={1}
           disabled={isLoadingMessage || !activeConversation}
           aria-label="Chat input"
@@ -43,11 +43,11 @@ export function ChatInput() {
         <Button
           type="submit"
           size="icon"
-          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-accent hover:bg-accent/90 text-accent-foreground w-10 h-10"
+          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl bg-accent hover:bg-accent/90 text-accent-foreground w-11 h-11"
           disabled={isLoadingMessage || !inputValue.trim() || !activeConversation}
           aria-label="Send message"
         >
-          <SendHorizonal size={20} />
+          <SendHorizonal size={22} />
         </Button>
       </div>
     </form>
