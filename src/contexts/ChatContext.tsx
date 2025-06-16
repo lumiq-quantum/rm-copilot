@@ -90,23 +90,44 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return newConversation;
   }, [currentUser, setActiveConversationId]);
 
-  const addMessageToConversation = useCallback(async (conversationId: string, messageContent: string) => {
+  const addMessageToConversation = useCallback(async (conversationId: string, userInput: string) => {
     if (!currentUser) return;
     const now = new Date().toISOString();
     const userMessage: Message = {
       id: `user-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       sender: 'user',
-      content: messageContent,
+      content: userInput,
       timestamp: now,
     };
 
+    // Get the history *before* adding the current userMessage.
+    // This will be passed as `chatHistory` to the API.
+    const conversationForApiHistory = conversations.find(c => c.id === conversationId);
+    let apiHistoryMessages: Message[] = [];
+
+    if (conversationForApiHistory) {
+        // If it's a new chat and only the initial bot message exists, that's the history for the API.
+        if (conversationForApiHistory.messages.length === 1 && 
+            conversationForApiHistory.messages[0].sender === 'bot' && 
+            conversationForApiHistory.messages[0].id.startsWith('msg-init-')) {
+            apiHistoryMessages = conversationForApiHistory.messages;
+        } else {
+        // Otherwise, it's the actual message history.
+        // The `msg-init-` is removed from UI state after the first user interaction.
+            apiHistoryMessages = conversationForApiHistory.messages;
+        }
+    }
+    
+    // Update UI state to include the new user message.
     setConversations(prev =>
       prev.map(conv => {
         if (conv.id === conversationId) {
+          // Check if this is the first user message in a new conversation
           const isEffectivelyNew = conv.messages.length === 1 && conv.messages[0].sender === 'bot' && conv.messages[0].id.startsWith('msg-init-');
           return { 
             ...conv, 
-            messages: isEffectivelyNew ? [userMessage] : [...conv.messages, userMessage],
+            // If new, UI starts with user message (initial bot msg is replaced). Otherwise, append.
+            messages: isEffectivelyNew ? [userMessage] : [...conv.messages, userMessage], 
             lastActivity: now, 
           };
         }
@@ -116,7 +137,9 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoadingMessage(true);
 
     try {
-      const botMessage = await processUserMessage(conversationId, currentUser.id, messageContent);
+      // `userInput` is the current query. `apiHistoryMessages` is the history *before* this query.
+      const botMessage = await processUserMessage(conversationId, currentUser.id, userInput, apiHistoryMessages);
+      
       setConversations(prev =>
         prev.map(conv =>
           conv.id === conversationId ? { ...conv, messages: [...conv.messages, botMessage], lastActivity: new Date().toISOString() } : conv
@@ -137,13 +160,13 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       );
       toast({
         title: "Error",
-        description: "Could not get response from AI. Please check console for details.",
+        description: "Could not get response from BankerAI. Please check console for details.",
         variant: "destructive",
       });
     } finally {
       setIsLoadingMessage(false);
     }
-  }, [currentUser, toast]);
+  }, [currentUser, conversations, toast, setActiveConversationId]); // Added conversations and setActiveConversationId
 
   const renameConversation = useCallback((conversationId: string, newName: string) => {
     setConversations(prev =>
@@ -161,7 +184,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       return updatedConversations;
     });
-  }, [activeConversationIdState]);
+  }, [activeConversationIdState, setActiveConversationIdState]); // Corrected dependency
   
   const activeConversation = conversations.find(conv => conv.id === activeConversationIdState) || null;
 
@@ -187,8 +210,4 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useChat = (): ChatContextType => {
   const context = useContext(ChatContext);
-  if (context === undefined) {
-    throw new Error('useChat must be used within a ChatProvider');
-  }
-  return context;
-};
+  if (

@@ -1,106 +1,128 @@
 // @ts-nocheck
-// Disabling TypeScript check for this file due to Genkit flow interactions potentially not being fully typed in this context.
+// Disabling TypeScript check for this file due to diverse API interaction needs.
 'use server';
 
-import {AIMessageContent, Message } from '@/types';
-import { customerSummary } from '@/ai/flows/customer-summary';
-import { generateCharts } from '@/ai/flows/generate-charts';
-import { sqlReasoning } from '@/ai/flows/sql-reasoning';
+import type { AIMessageContent, Message } from '@/types';
 
-function createBotMessage(content: AIMessageContent): Message {
+// Helper to format messages for the API
+function formatMessagesForApi(messages: Message[]): Array<{ role: 'user' | 'assistant'; content: Array<{ text: string }> }> {
+  return messages
+    .map(msg => {
+      let apiRole: 'user' | 'assistant';
+      let textContent: string | undefined;
+
+      if (msg.sender === 'user') {
+        apiRole = 'user';
+        // User message content is directly a string
+        textContent = msg.content as string;
+      } else { // bot
+        apiRole = 'assistant';
+        // Bot message content is an AIMessageContent object
+        // Ensure to handle cases where content might not be in the expected AIMessageContent structure
+        if (typeof msg.content === 'string') {
+            textContent = msg.content; // Should ideally be AIMessageContent
+        } else if (msg.content && typeof msg.content === 'object' && 'text' in msg.content) {
+            textContent = (msg.content as AIMessageContent).text;
+        }
+      }
+
+      // Only include messages that have text content
+      if (textContent) {
+        return {
+          role: apiRole,
+          content: [{ text: textContent }],
+        };
+      }
+      return null; // This message will be filtered out
+    })
+    .filter(msg => msg !== null) as Array<{ role: 'user' | 'assistant'; content: Array<{ text: string }> }>;
+}
+
+
+function createBotMessage(responseText: string): Message {
   return {
     id: `bot-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
     sender: 'bot',
-    content,
+    content: { text: responseText }, // API response is text
     timestamp: new Date().toISOString(),
   };
 }
 
 export async function processUserMessage(
-  _conversationId: string, // Not used in this mock, but good for future state
-  _userId: string, // Not used in this mock
-  userInput: string
+  _conversationId: string, 
+  _userId: string, 
+  userInput: string,
+  chatHistory: Message[] // Historical messages before the current userInput
 ): Promise<Message> {
-  const lowerInput = userInput.toLowerCase();
+  const apiUrl = process.env.NEXT_PUBLIC_BOT_API_URL;
+  const apiKey = process.env.NEXT_PUBLIC_BOT_API_KEY;
+
+  if (!apiUrl || !apiKey) {
+    console.error('API URL or Key is not configured in environment variables.');
+    return createBotMessage('BankerAI integration is not configured. Please contact support.');
+  }
+
+  // Format the historical messages for the API
+  const apiMessages = formatMessagesForApi(chatHistory);
+  
+  const requestBody = {
+    user_persona: "admin",
+    user_query: userInput, // The current user's direct query
+    sql_model_id: "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
+    chat_model_id: "us.anthropic.claude-3-5-haiku-20241022-v1:0",
+    embedding_model_id: "cohere.embed-multilingual-v3",
+    approach: "few_shot",
+    db_conn_conf: {
+        db_type: "redshift",
+        host: "data-analyst-workgroup.203918850931.us-east-1.redshift-serverless.amazonaws.com",
+        user: "demo",
+        password: "Elitebook123",
+        database: "student_club",
+        port: 5439
+    },
+    metadata: {
+        s3_bucket_name: "data-analyst-v2-bucket-203918850931",
+        is_meta: true,
+        table_meta: "schema/student_club_tables.xlsx",
+        column_meta: "schema/student_club_columns.xlsx",
+        metric_meta: "schema/student_club_metrics.xlsx",
+        table_access: null
+    },
+    messages: apiMessages, // History before the current user_query
+    session: "new" 
+  };
 
   try {
-    if (lowerInput.includes('chart') || lowerInput.includes('visualize') || lowerInput.includes('plot')) {
-      // Simulate fetching customer data and converting to data URI
-      const csvData = "category,value\nSales,120\nMarketing,80\nDevelopment,150\nSupport,60";
-      const base64Csv = Buffer.from(csvData).toString('base64');
-      const customerDataUri = `data:text/csv;base64,${base64Csv}`;
-      
-      const chartResponse = await generateCharts({
-        customerData: customerDataUri,
-        question: userInput,
-      });
-      
-      return createBotMessage({
-        text: chartResponse.reasoning,
-        chart: chartResponse.chart?.url ? { url: chartResponse.chart.url, altText: chartResponse.chart.altText } : undefined,
-      });
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    });
 
-    } else if (lowerInput.includes('sql') || lowerInput.includes('database') || lowerInput.includes('query detail')) {
-      // Simulate SQL query generation and execution
-      const mockSqlQuery = `SELECT * FROM customers WHERE name LIKE '%${userInput.split(' ').pop()}%' LIMIT 1;`;
-      const mockDatabaseSchema = `
-        CREATE TABLE customers (
-          id INTEGER PRIMARY KEY,
-          name TEXT,
-          email TEXT,
-          total_spend REAL
-        );
-        CREATE TABLE transactions (
-          id INTEGER PRIMARY KEY,
-          customer_id INTEGER,
-          amount REAL,
-          date TEXT,
-          FOREIGN KEY (customer_id) REFERENCES customers(id)
-        );
-      `;
-      const mockQueryResult = JSON.stringify([{ id: 1, name: 'John Doe', email: 'john.doe@example.com', total_spend: 1250.75 }]);
-      
-      const sqlResponse = await sqlReasoning({
-        question: userInput,
-        sqlQuery: mockSqlQuery,
-        databaseSchema: mockDatabaseSchema,
-        queryResult: mockQueryResult,
-      });
-
-      return createBotMessage({
-        text: sqlResponse.answer,
-        sqlInfo: {
-          query: sqlResponse.sqlQuery,
-          reasoning: sqlResponse.reasoning,
-        },
-      });
-
-    } else if (lowerInput.includes('summary for customer') || lowerInput.includes('tell me about customer')) {
-      const customerIdMatch = lowerInput.match(/customer\s+(\w+)/);
-      const customerId = customerIdMatch ? customerIdMatch[1] : 'unknown';
-
-      const summaryResponse = await customerSummary({ customerId });
-      return createBotMessage({ text: summaryResponse.summary });
-    
-    } else {
-      // Generic response or use a default flow
-      // For simplicity, let's use a modified customerSummary or a generic text response
-      if (lowerInput.startsWith("who is") || lowerInput.startsWith("what is")) {
-         return createBotMessage({ text: `I'm sorry, I can only provide information about customers. For general queries, please consult other resources.` });
-      }
-      const summaryResponse = await customerSummary({ customerId: 'generic_customer_id_for_general_query' });
-      let responseText = `Regarding your query: "${userInput}", here's a general customer insight: ${summaryResponse.summary}`;
-      if (summaryResponse.summary.length < 20) { // if summary is too short/generic
-        responseText = `I can help with specific customer inquiries, charts, or SQL explanations. For example, try "Show me a chart of transactions" or "What is the SQL query for customer balance?" Your query: "${userInput}".`;
-      }
-      return createBotMessage({ text: responseText });
+    if (!response.ok) {
+      const errorBody = await response.text();
+      console.error('API Error:', response.status, errorBody);
+      return createBotMessage(`Error from BankerAI API: ${response.status} - ${errorBody || 'Failed to get response'}`);
     }
+
+    const responseData = await response.json();
+    
+    if (responseData && responseData.response) {
+      return createBotMessage(responseData.response);
+    } else {
+      console.error('API Error: Unexpected response format', responseData);
+      return createBotMessage('Received an unexpected response format from BankerAI.');
+    }
+
   } catch (error) {
-    console.error('AI flow error:', error);
-    let errorMessage = 'An error occurred while processing your request.';
+    console.error('Network or other error calling bot API:', error);
+    let errorMessage = 'An error occurred while contacting the BankerAI service.';
     if (error instanceof Error) {
       errorMessage = `Error: ${error.message}`;
     }
-    return createBotMessage({ text: `I apologize, but I encountered an issue. ${errorMessage}` });
+    return createBotMessage(errorMessage);
   }
 }
