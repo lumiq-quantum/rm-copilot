@@ -1,1 +1,6 @@
-// Flows will be imported for their side effects in this file.
+import { config } from 'dotenv';
+config();
+
+import '@/ai/flows/customer-summary.ts';
+import '@/ai/flows/generate-charts.ts';
+import '@/ai/flows/sql-reasoning.ts';
