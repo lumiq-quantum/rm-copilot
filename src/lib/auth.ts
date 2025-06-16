@@ -3,8 +3,8 @@ import type { User } from '@/types';
 const MOCK_USER_KEY = 'banker_ai_mock_user';
 
 // Mock credentials
-const VALID_USERNAME = 'rm_user';
-const VALID_PASSWORD = 'password123';
+const VALID_USERNAME = 'demouser@lumiq.ai';
+const VALID_PASSWORD = 'lumiq123';
 
 export function login(username: string, password_DO_NOT_USE_IN_PROD: string): Promise<User | null> {
   return new Promise((resolve, reject) => {

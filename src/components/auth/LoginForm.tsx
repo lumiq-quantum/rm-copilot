@@ -43,8 +43,8 @@ const FeatureHighlights = [
 ];
 
 export function LoginForm() {
-  const [email, setEmail] = useState('relationship.manager@bank.com'); // Pre-fill for demo
-  const [password, setPassword] = useState('password123'); // Pre-fill for demo
+  const [email, setEmail] = useState('demouser@lumiq.ai'); // Pre-fill for demo
+  const [password, setPassword] = useState('lumiq123'); // Pre-fill for demo
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -142,7 +142,7 @@ export function LoginForm() {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="relationship.manager@bank.com"
+                    placeholder="demouser@lumiq.ai"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
