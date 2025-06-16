@@ -5,15 +5,17 @@ export interface User {
 }
 
 export interface AIMessageContent {
-  text?: string;
+  text?: string; // Mapped from API's "answer"
   chart?: {
     url: string; // Can be a data URI (base64)
     altText: string;
   };
   sqlInfo?: {
     query: string;
-    reasoning: string;
+    // Reasoning might not be directly available from the new API, or it's part of 'text'
+    // reasoning?: string; 
   };
+  tableData?: Record<string, any>[]; // Parsed from API's "dataframe"
 }
 
 export type MessageContent = AIMessageContent | string;
@@ -33,3 +35,4 @@ export interface Conversation {
   lastActivity: string; // Store as ISO string, updated on new message
   userId: string; 
 }
+

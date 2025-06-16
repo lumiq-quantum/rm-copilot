@@ -21,7 +21,7 @@ function formatMessagesForApi(messages: Message[]): Array<{ role: 'user' | 'assi
         // Bot message content is an AIMessageContent object
         // Ensure to handle cases where content might not be in the expected AIMessageContent structure
         if (typeof msg.content === 'string') {
-            textContent = msg.content; // Should ideally be AIMessageContent
+            textContent = msg.content; 
         } else if (msg.content && typeof msg.content === 'object' && 'text' in msg.content) {
             textContent = (msg.content as AIMessageContent).text;
         }
@@ -41,11 +41,39 @@ function formatMessagesForApi(messages: Message[]): Array<{ role: 'user' | 'assi
 }
 
 
-function createBotMessage(responseText: string): Message {
+function createBotMessage(responseData: any): Message {
+  const content: AIMessageContent = {};
+
+  if (responseData && typeof responseData.answer === 'string') {
+    content.text = responseData.answer;
+  } else if (responseData && typeof responseData.response === 'string') { // Fallback for previous structure
+    content.text = responseData.response;
+  } else {
+    content.text = 'Received an unexpected response format from BankerAI.';
+  }
+
+  if (responseData.sql_query) {
+    content.sqlInfo = { query: responseData.sql_query };
+  }
+
+  if (responseData.dataframe) {
+    try {
+      const parsedData = JSON.parse(responseData.dataframe);
+      if (Array.isArray(parsedData) && parsedData.length > 0) {
+        content.tableData = parsedData;
+      } else if (parsedData) { // Handle if dataframe is a single object (though array is expected)
+         content.tableData = [parsedData];
+      }
+    } catch (e) {
+      console.error("Failed to parse dataframe:", e);
+      content.text = (content.text || "") + "\n\nError: Could not display data table due to parsing error.";
+    }
+  }
+  
   return {
     id: `bot-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
     sender: 'bot',
-    content: { text: responseText }, // API response is text
+    content: content,
     timestamp: new Date().toISOString(),
   };
 }
@@ -83,7 +111,7 @@ export async function processUserMessage(
         table_meta: "schema/student_club_tables.xlsx",
         column_meta: "schema/student_club_columns.xlsx",
         metric_meta: "schema/student_club_metrics.xlsx",
-        table_access: null
+        table_access": null
     },
     messages: apiMessages, // History before the current user_query
     session: "new" 
@@ -102,16 +130,17 @@ export async function processUserMessage(
     if (!response.ok) {
       const errorBody = await response.text();
       console.error('API Error:', response.status, errorBody);
-      return createBotMessage(`Error from BankerAI API: ${response.status} - ${errorBody || 'Failed to get response'}`);
+      return createBotMessage({ answer: `Error from BankerAI API: ${response.status} - ${errorBody || 'Failed to get response'}`});
     }
 
     const responseData = await response.json();
     
-    if (responseData && responseData.response) {
-      return createBotMessage(responseData.response);
+    // The API response now has "answer", "sql_query", "dataframe" etc.
+    if (responseData && (responseData.answer || responseData.response)) {
+      return createBotMessage(responseData);
     } else {
       console.error('API Error: Unexpected response format', responseData);
-      return createBotMessage('Received an unexpected response format from BankerAI.');
+      return createBotMessage({ answer: 'Received an unexpected response format from BankerAI.' });
     }
 
   } catch (error) {
@@ -120,6 +149,7 @@ export async function processUserMessage(
     if (error instanceof Error) {
       errorMessage = `Error: ${error.message}`;
     }
-    return createBotMessage(errorMessage);
+    return createBotMessage({ answer: errorMessage });
   }
 }
+
