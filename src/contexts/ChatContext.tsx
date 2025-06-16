@@ -7,6 +7,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { processUserMessage } from '@/app/actions';
 import { getCurrentUser } from '@/lib/auth';
 import { useToast } from '@/hooks/use-toast';
+import { formatDistanceToNow } from 'date-fns';
 
 const CHAT_STORAGE_KEY = 'banker_ai_chat_conversations';
 
@@ -101,19 +102,10 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     const conversationForApiHistory = conversations.find(c => c.id === conversationId);
-    let apiHistoryMessages: Message[] = [];
+    // Ensure apiHistoryMessages includes the current userMessage for the API call
+    const previousMessages = conversationForApiHistory ? conversationForApiHistory.messages : [];
+    const apiHistoryMessages: Message[] = [...previousMessages, userMessage];
 
-    if (conversationForApiHistory) {
-        // If it's a new chat (only initial bot message exists), API history should be that initial bot message.
-        // Otherwise, send the actual message history.
-        if (conversationForApiHistory.messages.length === 1 &&
-            conversationForApiHistory.messages[0].sender === 'bot' &&
-            conversationForApiHistory.messages[0].id.startsWith('msg-init-')) {
-             apiHistoryMessages = conversationForApiHistory.messages;
-        } else {
-            apiHistoryMessages = conversationForApiHistory.messages;
-        }
-    }
 
     setConversations(prev =>
       prev.map(conv => {
@@ -160,7 +152,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } finally {
       setIsLoadingMessage(false);
     }
-  }, [currentUser, conversations, toast, setActiveConversationId]);
+  }, [currentUser, conversations, toast]);
 
   const renameConversation = useCallback((conversationId: string, newName: string) => {
     setConversations(prev =>
@@ -178,7 +170,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       return updatedConversations;
     });
-  }, [activeConversationIdState, setActiveConversationIdState]); // Corrected: use setActiveConversationIdState directly
+  }, [activeConversationIdState]);
 
   const activeConversation = conversations.find(conv => conv.id === activeConversationIdState) || null;
 
@@ -209,3 +201,4 @@ export const useChat = (): ChatContextType => {
   }
   return context;
 };
+
