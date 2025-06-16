@@ -7,15 +7,25 @@ import { ChatProvider, useChat } from '@/contexts/ChatContext';
 import { 
   SidebarProvider, 
   Sidebar, 
-  SidebarTrigger, 
   SidebarInset,
-  SidebarRail
+  SidebarRail,
+  useSidebar // Added useSidebar import
 } from '@/components/ui/sidebar';
 import { ChatSidebarContent } from '@/components/chat/ChatSidebarContent';
 import { getCurrentUser } from '@/lib/auth';
-import { Button } from '@/components/ui/button'; // For header
-import { PanelLeftOpen } from 'lucide-react'; // For header trigger
+import { Button } from '@/components/ui/button';
+import { PanelLeftOpen } from 'lucide-react';
 
+
+// Helper component for the mobile sidebar trigger button
+const MobileSidebarTriggerButton = () => {
+  const { toggleSidebar } = useSidebar();
+  return (
+    <Button variant="ghost" size="icon" onClick={toggleSidebar} className="h-7 w-7">
+      <PanelLeftOpen />
+    </Button>
+  );
+};
 
 function ProtectedChatLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -52,11 +62,7 @@ function ProtectedChatLayout({ children }: { children: React.ReactNode }) {
         <div className="flex flex-col h-screen">
           {/* Optional Header for main content area, especially for mobile */}
           <header className="md:hidden p-3 border-b flex items-center sticky top-0 bg-background/80 backdrop-blur-sm z-10">
-            <SidebarTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <PanelLeftOpen />
-              </Button>
-            </SidebarTrigger>
+            <MobileSidebarTriggerButton />
             <h2 className="ml-3 font-headline text-xl">
               {/* Dynamically show conversation name here if possible, or BankerAI */}
               BankerAI Chat
