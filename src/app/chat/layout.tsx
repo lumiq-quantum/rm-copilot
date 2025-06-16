@@ -1,3 +1,4 @@
+
 // @ts-nocheck
 "use client"; 
 
@@ -9,17 +10,15 @@ import {
   Sidebar, 
   SidebarInset,
   SidebarRail,
-  useSidebar 
 } from '@/components/ui/sidebar';
 import { ChatSidebarContent } from '@/components/chat/ChatSidebarContent';
 import { getCurrentUser } from '@/lib/auth';
-import { Button } from '@/components/ui/button';
-import { PanelLeftOpen, PanelLeftClose } from 'lucide-react';
+import { PanelLeftOpen, PanelLeftClose } from 'lucide-react'; // Icons for potential future use or if needed by sidebar component itself
+
 
 function ProtectedChatLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { currentUser, activeConversation } = useChat(); // Correctly destructure activeConversation
-  const { toggleSidebar, state: sidebarState, isMobile } = useSidebar();
+  const { currentUser, activeConversation } = useChat();
 
 
   useEffect(() => {
@@ -41,33 +40,33 @@ function ProtectedChatLayout({ children }: { children: React.ReactNode }) {
     return null; 
   }
 
+  const conversationName = activeConversation?.name || "New Conversation";
+  const conversationSubtitle = activeConversation?.messages?.length > 1 
+    ? `Last message at ${new Date(activeConversation.messages[activeConversation.messages.length - 1].timestamp).toLocaleTimeString()}`
+    : "Ask questions about customer data, get insights and visualizations";
+
+
   return (
     <>
-      <Sidebar side="left" variant="sidebar" collapsible="icon">
+      <Sidebar side="left" variant="sidebar" collapsible="icon" className="bg-sidebar border-r border-sidebar-border">
         <ChatSidebarContent />
       </Sidebar>
       <SidebarRail />
       <SidebarInset>
-        <div className="flex flex-col h-screen">
-          <header className="p-3 border-b flex items-center sticky top-0 bg-background/95 backdrop-blur-sm z-10">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={toggleSidebar} 
-              className="h-7 w-7 mr-3"
-              aria-label="Toggle sidebar"
-            >
-              {isMobile ? (
-                <PanelLeftOpen />
-              ) : sidebarState === 'expanded' ? (
-                <PanelLeftClose />
-              ) : (
-                <PanelLeftOpen />
-              )}
-            </Button>
-            <h2 className="font-headline text-xl truncate">
-              {activeConversation?.name || 'BankerAI Chat'}
-            </h2>
+        <div className="flex flex-col h-screen bg-background">
+          <header className="p-4 border-b flex items-center justify-between sticky top-0 bg-background z-10 h-[73px]">
+            <div>
+              <h2 className="font-semibold text-lg text-foreground">
+                {conversationName}
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                {conversationSubtitle}
+              </p>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className="w-2.5 h-2.5 bg-green-500 rounded-full"></span>
+              <span className="text-xs text-muted-foreground font-medium">AI Assistant Online</span>
+            </div>
           </header>
           <main className="flex-grow overflow-hidden">
             {children}
