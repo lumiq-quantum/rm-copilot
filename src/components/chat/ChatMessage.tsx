@@ -1,6 +1,7 @@
 
 "use client";
 
+import React from 'react'; // Added React import
 import type { Message, AIMessageContent } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
