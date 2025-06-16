@@ -69,7 +69,7 @@ export function ChatWindow() {
               <Button
                 key={index}
                 variant="outline"
-                className="h-auto py-3 px-4 text-left justify-start font-normal text-sm text-foreground hover:bg-muted/80 border-border"
+                className="h-auto py-3 px-4 text-left justify-start font-normal text-sm text-foreground hover:bg-muted/80 hover:text-foreground border-border"
                 onClick={() => handleSuggestionClick(suggestion.text)}
                 data-ai-hint={suggestion['data-ai-hint']}
               >
@@ -109,3 +109,4 @@ export function ChatWindow() {
     </div>
   );
 }
+
