@@ -14,11 +14,11 @@ import {
 import { ChatSidebarContent } from '@/components/chat/ChatSidebarContent';
 import { getCurrentUser } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
-import { PanelLeftOpen, PanelLeftClose } from 'lucide-react'; // Added PanelLeftClose
+import { PanelLeftOpen, PanelLeftClose } from 'lucide-react';
 
 function ProtectedChatLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { currentUser } = useChat(); 
+  const { currentUser, activeConversation } = useChat(); // Correctly destructure activeConversation
   const { toggleSidebar, state: sidebarState, isMobile } = useSidebar();
 
 
@@ -42,7 +42,7 @@ function ProtectedChatLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <SidebarProvider defaultOpen={true}>
+    <>
       <Sidebar side="left" variant="sidebar" collapsible="icon">
         <ChatSidebarContent />
       </Sidebar>
@@ -74,16 +74,14 @@ function ProtectedChatLayout({ children }: { children: React.ReactNode }) {
           </main>
         </div>
       </SidebarInset>
-    </SidebarProvider>
+    </>
   );
 }
 
 export default function ChatLayout({ children }: { children: React.ReactNode }) {
-  // This outer ChatLayout component provides ChatContext to ProtectedChatLayout
-  // So ProtectedChatLayout can then provide SidebarContext to its children.
   return (
     <ChatProvider>
-      <SidebarProvider defaultOpen={true}> {/* SidebarProvider needs to wrap ProtectedChatLayout */}
+      <SidebarProvider defaultOpen={true}>
         <ProtectedChatLayout>{children}</ProtectedChatLayout>
       </SidebarProvider>
     </ChatProvider>
