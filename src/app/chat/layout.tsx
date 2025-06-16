@@ -10,15 +10,18 @@ import {
   Sidebar, 
   SidebarInset,
   SidebarRail,
+  SidebarTrigger, // Added import
+  useSidebar // Added import
 } from '@/components/ui/sidebar';
 import { ChatSidebarContent } from '@/components/chat/ChatSidebarContent';
 import { getCurrentUser } from '@/lib/auth';
-import { PanelLeftOpen, PanelLeftClose } from 'lucide-react'; // Icons for potential future use or if needed by sidebar component itself
+// Icons for potential future use or if needed by sidebar component itself
 
 
 function ProtectedChatLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { currentUser, activeConversation } = useChat();
+  const { isMobile } = useSidebar(); // Get isMobile state
 
 
   useEffect(() => {
@@ -55,13 +58,16 @@ function ProtectedChatLayout({ children }: { children: React.ReactNode }) {
       <SidebarInset>
         <div className="flex flex-col h-screen bg-background">
           <header className="p-4 border-b flex items-center justify-between sticky top-0 bg-background z-10 h-[73px]">
-            <div>
-              <h2 className="font-semibold text-lg text-foreground">
-                {conversationName}
-              </h2>
-              <p className="text-xs text-muted-foreground">
-                {conversationSubtitle}
-              </p>
+            <div className="flex items-center space-x-2">
+              {isMobile && <SidebarTrigger />} 
+              <div>
+                <h2 className="font-semibold text-lg text-foreground">
+                  {conversationName}
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  {conversationSubtitle}
+                </p>
+              </div>
             </div>
             <div className="flex items-center space-x-2">
               <span className="w-2.5 h-2.5 bg-green-500 rounded-full"></span>
