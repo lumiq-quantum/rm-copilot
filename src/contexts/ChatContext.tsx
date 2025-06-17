@@ -101,12 +101,6 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       timestamp: now,
     };
 
-    const conversationForApiHistory = conversations.find(c => c.id === conversationId);
-    // Ensure apiHistoryMessages includes the current userMessage for the API call
-    const previousMessages = conversationForApiHistory ? conversationForApiHistory.messages : [];
-    const apiHistoryMessages: Message[] = [...previousMessages, userMessage];
-
-
     setConversations(prev =>
       prev.map(conv => {
         if (conv.id === conversationId) {
@@ -123,7 +117,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoadingMessage(true);
 
     try {
-      const botMessage = await processUserMessage(conversationId, currentUser.id, userInput, apiHistoryMessages);
+      // Updated call to processUserMessage, only sending userInput
+      const botMessage = await processUserMessage(userInput);
 
       setConversations(prev =>
         prev.map(conv =>
@@ -152,7 +147,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } finally {
       setIsLoadingMessage(false);
     }
-  }, [currentUser, conversations, toast]);
+  }, [currentUser, toast]); // Removed `conversations` from dependencies as it's not directly used for API call context anymore
 
   const renameConversation = useCallback((conversationId: string, newName: string) => {
     setConversations(prev =>
@@ -201,4 +196,3 @@ export const useChat = (): ChatContextType => {
   }
   return context;
 };
-
