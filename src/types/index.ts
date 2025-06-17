@@ -5,17 +5,11 @@ export interface User {
 }
 
 export interface AIMessageContent {
-  text?: string; // Mapped from API's "answer"
-  chart?: {
-    url: string; // Can be a data URI (base64)
-    altText: string;
-  };
+  text?: string; // Mapped from API's "direct_answer"
   sqlInfo?: {
-    query: string;
-    // Reasoning might not be directly available from the new API, or it's part of 'text'
-    // reasoning?: string; 
+    query: string; // Mapped from API's "redshift_sql"
   };
-  tableData?: Record<string, any>[]; // Parsed from API's "dataframe"
+  graphicalRepresentation?: string; // Mapped from API's "graphical_representation"
 }
 
 export type MessageContent = AIMessageContent | string;
@@ -23,7 +17,7 @@ export type MessageContent = AIMessageContent | string;
 export interface Message {
   id: string;
   sender: 'user' | 'bot';
-  content: MessageContent; 
+  content: MessageContent;
   timestamp: string; // Store as ISO string for easier serialization
 }
 
@@ -33,6 +27,5 @@ export interface Conversation {
   messages: Message[];
   createdAt: string; // Store as ISO string
   lastActivity: string; // Store as ISO string, updated on new message
-  userId: string; 
+  userId: string;
 }
-

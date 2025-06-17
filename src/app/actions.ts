@@ -18,7 +18,7 @@ function formatMessagesForApi(messages: Message[]): Array<{ role: 'user' | 'assi
       } else { // bot
         apiRole = 'assistant';
         if (typeof msg.content === 'string') {
-            textContent = msg.content; 
+            textContent = msg.content;
         } else if (msg.content && typeof msg.content === 'object' && 'text' in msg.content) {
             textContent = (msg.content as AIMessageContent).text;
         }
@@ -39,30 +39,24 @@ function formatMessagesForApi(messages: Message[]): Array<{ role: 'user' | 'assi
 function createBotMessage(responseData: any): Message {
   const content: AIMessageContent = {};
 
-  if (responseData && typeof responseData.answer === 'string') {
-    content.text = responseData.answer;
-  } else {
-    content.text = 'Received an unexpected response format or no text answer from the BankerAI API.';
-  }
-
-  if (responseData.sql_query && typeof responseData.sql_query === 'string') {
-    content.sqlInfo = { query: responseData.sql_query };
-  }
-
-  if (responseData.dataframe && typeof responseData.dataframe === 'string') { // Expecting dataframe as a JSON string
-    try {
-      const parsedData = JSON.parse(responseData.dataframe);
-      if (Array.isArray(parsedData) && parsedData.length > 0) {
-        content.tableData = parsedData;
-      } else if (parsedData && typeof parsedData === 'object' && Object.keys(parsedData).length > 0) { 
-         content.tableData = [parsedData];
-      }
-    } catch (e) {
-      console.error("Failed to parse dataframe:", e);
-      content.text = (content.text || "") + "\n\nError: Could not display data table due to parsing error.";
+  if (responseData && responseData.result) {
+    if (typeof responseData.result.direct_answer === 'string') {
+      content.text = responseData.result.direct_answer;
+    } else {
+      content.text = 'Received an unexpected response format or no text answer from the BankerAI API.';
     }
+
+    if (responseData.result.redshift_sql && typeof responseData.result.redshift_sql === 'string') {
+      content.sqlInfo = { query: responseData.result.redshift_sql };
+    }
+
+    if (responseData.result.graphical_representation && typeof responseData.result.graphical_representation === 'string') {
+      content.graphicalRepresentation = responseData.result.graphical_representation;
+    }
+  } else {
+     content.text = 'Received an unexpected or empty response from the BankerAI API.';
   }
-  
+
   return {
     id: `bot-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
     sender: 'bot',
@@ -93,13 +87,10 @@ export async function processUserMessage(
     if (!response.ok) {
       const errorBody = await response.text();
       console.error('API Error:', response.status, errorBody);
-      return createBotMessage({ answer: `Error from BankerAI API: ${response.status} - ${errorBody || 'Failed to get response'}`});
+      return createBotMessage({ result: { direct_answer: `Error from BankerAI API: ${response.status} - ${errorBody || 'Failed to get response'}`}});
     }
 
     const responseData = await response.json();
-    
-    // Assuming the new API returns `answer`, `sql_query`, `dataframe` as per the example response.
-    // createBotMessage is designed to handle these fields.
     return createBotMessage(responseData);
 
   } catch (error) {
@@ -108,6 +99,6 @@ export async function processUserMessage(
     if (error instanceof Error) {
       errorMessage = `Error: ${error.message}`;
     }
-    return createBotMessage({ answer: errorMessage });
+    return createBotMessage({ result: { direct_answer: errorMessage }});
   }
 }

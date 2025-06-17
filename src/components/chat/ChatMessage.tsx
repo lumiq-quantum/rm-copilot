@@ -3,20 +3,11 @@
 
 import React from 'react';
 import type { Message, AIMessageContent } from '@/types';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Sparkles, UserCircle2, BarChart2, Database, TableIcon } from 'lucide-react';
-import Image from 'next/image';
+import { Sparkles, UserCircle2, Database, AlignLeft } from 'lucide-react'; // Replaced BarChart2, TableIcon with AlignLeft
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 
 interface ChatMessageProps {
   message: Message;
@@ -25,7 +16,7 @@ interface ChatMessageProps {
 export function ChatMessage({ message }: ChatMessageProps) {
   const isUser = message.sender === 'user';
   const content = message.content as AIMessageContent | string;
-  
+
   if (message.id.startsWith('msg-init-')) {
     return null;
   }
@@ -41,66 +32,25 @@ export function ChatMessage({ message }: ChatMessageProps) {
       return <div className="whitespace-normal break-words">{formattedContent}</div>;
     }
 
-    const tableHeaders = content.tableData && content.tableData.length > 0 
-      ? Object.keys(content.tableData[0]) 
-      : [];
-
     return (
       <div className="space-y-4">
-        {content.text && <p className="whitespace-pre-wrap break-words">{content.text}</p>}
-        
-        {content.chart && content.chart.url && (
-          <Card className="overflow-hidden shadow-sm border-border">
-            <CardHeader className="p-3 bg-muted/30">
-              <CardTitle className="text-sm font-medium flex items-center text-foreground">
-                <BarChart2 className="w-4 h-4 mr-2 text-primary" />
-                Data Visualization
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-2 bg-background">
-              <Image 
-                src={content.chart.url} 
-                alt={content.chart.altText} 
-                width={400} 
-                height={300} 
-                className="rounded-md object-contain w-full h-auto"
-                data-ai-hint="financial chart"
-              />
-              <p className="text-xs text-muted-foreground mt-1.5 text-center">{content.chart.altText}</p>
-            </CardContent>
-          </Card>
+        {content.text && (
+            <div className="whitespace-pre-wrap break-words" dangerouslySetInnerHTML={{ __html: content.text.replace(/\n/g, '<br />') }} />
         )}
 
-        {content.tableData && content.tableData.length > 0 && (
+        {content.graphicalRepresentation && (
           <Card className="overflow-hidden shadow-sm border-border">
             <CardHeader className="p-3 bg-muted/30">
               <CardTitle className="text-sm font-medium flex items-center text-foreground">
-                <TableIcon className="w-4 h-4 mr-2 text-primary" />
-                Data Table
+                <AlignLeft className="w-4 h-4 mr-2 text-primary" />
+                Graphical Representation
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0 bg-background">
-              <ScrollArea className="max-h-80 w-full [&_table]:min-w-full">
-                <Table className="text-xs">
-                  <TableHeader className="sticky top-0 bg-muted/50 z-10">
-                    <TableRow>
-                      {tableHeaders.map((header) => (
-                        <TableHead key={header} className="whitespace-nowrap px-3 py-2 h-auto font-semibold">{header}</TableHead>
-                      ))}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {content.tableData.map((row, rowIndex) => (
-                      <TableRow key={rowIndex}>
-                        {tableHeaders.map((header) => (
-                          <TableCell key={`${rowIndex}-${header}`} className="whitespace-nowrap px-3 py-1.5">
-                            {typeof row[header] === 'boolean' ? row[header].toString() : row[header]}
-                          </TableCell>
-                        ))}
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+              <ScrollArea className="max-h-80 w-full">
+                <pre className="text-xs font-mono whitespace-pre p-3.5 leading-relaxed">
+                  {content.graphicalRepresentation}
+                </pre>
               </ScrollArea>
             </CardContent>
           </Card>
@@ -121,14 +71,6 @@ export function ChatMessage({ message }: ChatMessageProps) {
                     <code>{content.sqlInfo.query.trim()}</code>
                   </pre>
                 </ScrollArea>
-                {/* Reasoning is not directly available from the new API to display here
-                {content.sqlInfo.reasoning && (
-                  <div>
-                    <h4 className="font-semibold text-xs mb-1 text-primary">Reasoning:</h4>
-                    <p className="text-xs text-muted-foreground whitespace-pre-wrap">{content.sqlInfo.reasoning}</p>
-                  </div>
-                )}
-                */}
               </AccordionContent>
             </AccordionItem>
           </Accordion>
@@ -148,8 +90,8 @@ export function ChatMessage({ message }: ChatMessageProps) {
       )}
       <div
         className={`max-w-[75%] p-3.5 rounded-xl shadow
-          ${isUser 
-            ? 'bg-primary text-primary-foreground rounded-br-none' 
+          ${isUser
+            ? 'bg-primary text-primary-foreground rounded-br-none'
             : 'bg-card text-card-foreground border border-border rounded-bl-none'
           }`}
       >
