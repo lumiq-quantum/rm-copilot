@@ -24,6 +24,7 @@ function formatMessagesForApi(messages: Message[]): Array<{ role: 'user' | 'assi
         }
       }
 
+      // Exclude initial bot welcome message from API history if it's still the only message
       if (textContent && !msg.id.startsWith('msg-init-')) {
         return {
           role: apiRole,
@@ -40,8 +41,11 @@ function createBotMessage(responseData: any): Message {
   const content: AIMessageContent = {};
 
   if (responseData && responseData.result) {
-    if (typeof responseData.result.direct_answer === 'string') {
-      content.text = responseData.result.direct_answer;
+    let directAnswer = responseData.result.direct_answer;
+    if (typeof directAnswer === 'string') {
+      // Remove the specific heading if present
+      directAnswer = directAnswer.replace(/# 3\. Graphical Representation/g, '').trim();
+      content.text = directAnswer;
     } else {
       content.text = 'Received an unexpected response format or no text answer from the BankerAI API.';
     }
@@ -68,10 +72,10 @@ function createBotMessage(responseData: any): Message {
 export async function processUserMessage(
   userInput: string
 ): Promise<Message> {
-  const apiUrl = 'http://127.0.0.1:8080/text-to-sql'; // Updated API URL
+  const apiUrl = 'http://127.0.0.1:8080/text-to-sql';
 
   const requestBody = {
-    query: userInput, // Simplified request body
+    query: userInput,
   };
 
   try {
@@ -79,7 +83,7 @@ export async function processUserMessage(
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'accept': 'application/json', // Updated headers
+        'accept': 'application/json',
       },
       body: JSON.stringify(requestBody),
     });
